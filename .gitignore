@@ -1,0 +1,10 @@
+# node / env
+node_modules/
+.env
+attendance.db
+*.sqlite
+*.sqlite3
+dist/
+build/
+.vscode/
+.DS_Store

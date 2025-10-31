@@ -1,0 +1,64 @@
+:root{
+  --bg:#181818;
+  --card:#121212;
+  --accent:#00d9ff;
+  --muted:#2b2b2b;
+  --danger:#ff4444;
+  --btn-blue:#1e90ff;
+  --glass: rgba(255,255,255,0.02);
+}
+body {
+  margin:0;
+  background: var(--bg);
+  color: #eaeaea;
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial;
+}
+.heading {
+  color: var(--accent);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  position: relative;
+  padding-bottom: 10px;
+}
+.heading::after{
+  content:"";
+  display:block;
+  height:3px;
+  width:60%;
+  margin:8px auto 0;
+  border-radius:6px;
+  background: linear-gradient(90deg, rgba(0,217,255,0.15), rgba(0,217,255,0.45));
+  box-shadow: 0 4px 18px rgba(0,217,255,0.06);
+  transform-origin:left center;
+  animation: glow 2.5s linear infinite;
+  opacity:0.9;
+}
+@keyframes glow{
+  0%{ transform: scaleX(0.9) }
+  50%{ transform: scaleX(1) }
+  100%{ transform: scaleX(0.9) }
+}
+
+/* Buttons */
+.btn{ padding:8px 14px; border-radius:8px; font-weight:600; cursor:pointer; border:0; }
+.btn-accent{ background:var(--accent); color:#000; }
+.btn-danger{ background:var(--danger); color:#fff; }
+.btn-blue{ background:var(--btn-blue); color:#fff; }
+
+/* Input */
+.input-date{ padding:10px; border-radius:8px; border:1px solid rgba(0,217,255,0.22); background: #111; color:#fff; }
+
+/* Card */
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.0));
+  border-radius:16px;
+  padding:28px;
+  width: min(920px, 92%);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+}
+
+/* Table */
+.table thead th{ color: var(--accent); padding:12px 10px; border-bottom:2px solid var(--muted); text-align:left; }
+.table tbody td{ padding:12px 10px; border-bottom:1px solid #262626; }
+.table tbody tr:hover{ background:#232323; }

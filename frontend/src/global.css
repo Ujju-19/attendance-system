@@ -1,0 +1,373 @@
+/* --- Global layout and reset --- */
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 50%, #0e0e0e 100%);
+  color: #f5f5f5;
+  font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Center only the login screen --- */
+.center-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* --- Main container for dashboard --- */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+/* --- Dashboard container --- */
+.dashboard-container {
+  background: rgba(25, 25, 25, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+  width: 90%;
+  max-width: 1100px;
+  padding: 24px 32px;
+  margin-top: 40px;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Dashboard header --- */
+.dashboard-header {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 28px;
+  padding: 20px 0;
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 255, 170, 0.05),
+    rgba(0, 150, 255, 0.05)
+  );
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.05);
+}
+
+.dashboard-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #00eaff;
+  letter-spacing: 0.6px;
+  margin: 0;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+}
+
+.dashboard-header p {
+  color: #aaa;
+  font-size: 0.9rem;
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* --- Filter bar --- */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+input[type="date"],
+select {
+  background: #111;
+  color: #f5f5f5;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  transition: border 0.2s;
+}
+
+input[type="date"]:focus,
+select:focus {
+  border-color: #00b894;
+  outline: none;
+}
+
+/* --- Table styling --- */
+.table-container {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #141414;
+  border: 1px solid #1f1f1f;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 14px 16px;
+  text-align: left;
+}
+
+th {
+  background: #1f1f1f;
+  color: #00cec9;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+td {
+  border-bottom: 1px solid #1f1f1f;
+}
+
+tr:nth-child(even) {
+  background: #191919;
+}
+
+tr:hover {
+  background: rgba(0, 184, 148, 0.1);
+  transition: background 0.2s;
+}
+
+/* --- Buttons (Base) --- */
+button {
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  border: none;
+  letter-spacing: 0.3px;
+}
+
+button:hover {
+  opacity: 0.9;
+  transform: scale(1.04);
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #0984e3, #00a8ff);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(0, 168, 255, 0.3);
+}
+
+.btn-danger {
+  background: linear-gradient(90deg, #d63031, #ff6b6b);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(255, 80, 80, 0.3);
+}
+
+.btn-secondary {
+  background: linear-gradient(90deg, #333, #555);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+}
+
+/* --- Top bar layout --- */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: linear-gradient(to right, #0d0d0d, #1a1a1a);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* --- Left side buttons --- */
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+/* --- Right side (username + logout) --- */
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.username {
+  font-weight: 600;
+  color: #00eaff;
+  letter-spacing: 0.3px;
+  text-shadow: 0 0 6px rgba(0, 238, 255, 0.3);
+}
+
+/* --- Top bar buttons --- */
+.top-btn {
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  padding: 0.55rem 1.2rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.top-btn.live {
+  background: linear-gradient(90deg, #007bff, #00bfff);
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+}
+
+.top-btn.admin {
+  background: linear-gradient(90deg, #444, #666);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+.top-btn.logout {
+  background: linear-gradient(90deg, #ff3b3b, #ff6b6b);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
+}
+
+.top-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 0 15px rgba(255,255,255,0.2);
+}
+
+.top-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 5px rgba(255,255,255,0.1);
+}
+
+/* --- Status Badge --- */
+.status-badge {
+  background: #00b894;
+  color: #000;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* --- Scrollbar cleanup --- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+/* --- Top Navigation Bar --- */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #141414;
+  padding: 10px 20px;
+  border-bottom: 1px solid #222;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 20px auto;
+  border-radius: 10px;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.username {
+  font-weight: 600;
+  color: #f5f5f5;
+  letter-spacing: 0.5px;
+}
+
+/* --- Buttons --- */
+.top-btn {
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.25s ease;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.top-btn.live {
+  background: linear-gradient(135deg, #007bff, #00aaff);
+  box-shadow: 0 0 10px rgba(0, 150, 255, 0.4);
+}
+
+.top-btn.admin {
+  background: linear-gradient(135deg, #333, #444);
+  box-shadow: 0 0 8px rgba(100, 100, 100, 0.3);
+}
+
+.top-btn.logout {
+  background: linear-gradient(135deg, #ff4444, #ff6b6b);
+  box-shadow: 0 0 10px rgba(255, 70, 70, 0.4);
+}
+
+.top-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  opacity: 0.95;
+}
+
+.top-btn.active {
+  outline: 2px solid #00eaff;
+  box-shadow: 0 0 12px rgba(0, 234, 255, 0.5);
+}
+
+/* --- Main Container Override to Remove Horizontal Overflow --- */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 50%, #0e0e0e 100%);
+  overflow-x: hidden; /* ✅ prevents horizontal scroll */
+}
+
+.dashboard-container-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
