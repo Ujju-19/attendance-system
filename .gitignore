@@ -1,10 +1,31 @@
-# node / env
+# Node dependencies
 node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment files
 .env
-attendance.db
-*.sqlite
-*.sqlite3
+.env.local
+.env.production
+
+# Build outputs
 dist/
 build/
-.vscode/
+.vite/
+.cache/
+.next/
+out/
+
+# SQLite / local DB
+*.db
+
+# System files
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Misc
+.idea/
+.vscode/
