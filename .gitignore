@@ -1,31 +1,46 @@
-# Node dependencies
+# ===== Node / Backend =====
 node_modules/
-npm-debug.log
-yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
 
 # Environment files
 .env
 .env.local
-.env.production
-
-# Build outputs
-dist/
-build/
-.vite/
-.cache/
-.next/
-out/
-
-# SQLite / local DB
-*.db
-
-# System files
-.DS_Store
-Thumbs.db
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Logs
+logs
 *.log
+*.out
+*.err
 
-# Misc
+# Database or local data
+*.sqlite
+*.db
+/data/
+tmp/
+dist/
+
+# ===== Frontend / React =====
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.vite/
+frontend/.parcel-cache/
+
+# ===== OS / Editor crap =====
+.DS_Store
+Thumbs.db
 .idea/
 .vscode/
+*.swp
+
+# ===== Misc =====
+*.bak
+*.tmp
+*.orig
