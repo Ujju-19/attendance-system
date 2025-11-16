@@ -118,11 +118,30 @@ export async function getStats() {
   const todayRow = await db.get(
     "SELECT COUNT(*) AS total_today FROM attendance WHERE date(timestamp) = date('now','localtime')"
   );
+  const weekRow = await db.get(
+    "SELECT COUNT(*) AS total_week FROM attendance WHERE date(timestamp) >= date('now','-7 days','localtime')"
+  );
+  const uniqueToday = await db.get(
+    "SELECT COUNT(DISTINCT barcode) AS unique_today FROM attendance WHERE date(timestamp) = date('now','localtime')"
+  );
+  const activeDevice = await db.get(`
+    SELECT device_id, COUNT(*) AS cnt
+    FROM attendance
+    WHERE date(timestamp) >= date('now','-1 days','localtime')
+    GROUP BY device_id
+    ORDER BY cnt DESC
+    LIMIT 1
+  `);
+
   return {
     total: totalRow?.total || 0,
     total_today: todayRow?.total_today || 0,
+    total_week: weekRow?.total_week || 0,
+    unique_today: uniqueToday?.unique_today || 0,
+    most_active_device: activeDevice?.device_id || "N/A",
   };
 }
+
 /* -------------------------
    User management helpers
    ------------------------- */

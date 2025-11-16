@@ -3,10 +3,15 @@ import LiveTable from "./components/LiveTable.jsx";
 import LoginPage from "./components/LoginPage.jsx";
 import AdminPage from "./components/AdminPage.jsx";
 import "./global.css";
+import BarcodeScanner from "./components/BarcodeScanner.jsx";
+
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState("live");
+
+console.log("Backend URL:", import.meta.env.VITE_BACKEND_URL);
+
 
   useEffect(() => {
     const saved = localStorage.getItem("user");

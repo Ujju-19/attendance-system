@@ -9,24 +9,26 @@ export default function LiveTable() {
   const [selectedDate, setSelectedDate] = useState("");
   const [devices, setDevices] = useState([]);
   const [deviceFilter, setDeviceFilter] = useState("");
-  const [stats, setStats] = useState({ total_today: 0 });
+  const [stats, setStats] = useState({});
   const [newScan, setNewScan] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [highlighted, setHighlighted] = useState(null);
   const socketRef = useRef(null);
+  const audioRef = useRef(new Audio("/beep.mp3"));
 
-  /* --- Helper: Format date to DD-MM-YYYY HH:mm:ss --- */
   const formatDate = (timestamp) => {
     if (!timestamp) return "";
-    const date = new Date(timestamp);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
-    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+    const d = new Date(timestamp);
+    return d.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
   };
 
-  /* --- Fetch attendance records --- */
   const loadRecords = async (date = "", device = "") => {
     try {
       const params = [];
@@ -40,187 +42,163 @@ export default function LiveTable() {
     }
   };
 
-  /* --- Fetch devices and stats --- */
   const loadDevices = async () => {
-    try {
-      const data = await apiFetch("/api/devices");
-      setDevices(data || []);
-    } catch (err) {
-      console.error("loadDevices error:", err);
-    }
+    const data = await apiFetch("/api/devices");
+    setDevices(data || []);
   };
 
   const loadStats = async () => {
-    try {
-      const data = await apiFetch("/api/stats");
-      setStats(data || { total_today: 0 });
-    } catch (err) {
-      console.error("loadStats error:", err);
-    }
+    const data = await apiFetch("/api/stats");
+    setStats(data || {});
   };
 
-  /* --- Setup socket --- */
+  /* Socket + Initialization */
   useEffect(() => {
     loadRecords();
     loadDevices();
     loadStats();
 
-    if (!socketRef.current) {
-      socketRef.current = io(BACKEND);
+    socketRef.current = io(BACKEND);
 
-      socketRef.current.on("new-scan", (rec) => {
-        const today = new Date().toISOString().split("T")[0];
-        const matchesDate = !selectedDate || selectedDate === today;
-        const matchesDevice = !deviceFilter || deviceFilter === rec.device_id;
+    socketRef.current.on("new-scan", (rec) => {
+      setRecords((prev) => [rec, ...prev].slice(0, 200));
 
-        if (matchesDate && matchesDevice) {
-          setRecords((prev) => [rec, ...prev].slice(0, 200));
-        }
+      setHighlighted(rec.timestamp);
+      setTimeout(() => setHighlighted(null), 2000);
 
-        setNewScan(true);
-        setTimeout(() => setNewScan(false), 2000);
-      });
-    }
+      try {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+      } catch {}
 
-    return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
-    };
+      setNewScan(true);
+      setTimeout(() => setNewScan(false), 2000);
+    });
+
+    return () => socketRef.current.disconnect();
   }, []);
 
-  /* --- Filter changes --- */
   useEffect(() => {
     loadRecords(selectedDate, deviceFilter);
   }, [selectedDate, deviceFilter]);
 
-  const applyFilter = () => {
-    loadRecords(selectedDate, deviceFilter);
-  };
-
   const clearFilter = () => {
     setSelectedDate("");
     setDeviceFilter("");
+    setSearchQuery("");
     loadRecords();
     loadStats();
   };
 
-  /* --- CSV Export --- */
   const downloadCSV = () => {
-    if (!records.length) {
-      alert("No records to export.");
-      return;
-    }
-
-    const safeDate = selectedDate || new Date().toISOString().split("T")[0];
-    const safeDevice = deviceFilter || "all";
-
+    if (!records.length) return alert("No records to export.");
     const header = "Timestamp,Barcode,Device\n";
     const rows = records
-      .map(
-        (r) =>
-          `${formatDate(r.timestamp)},${r.barcode},${r.device_id}`
-      )
+      .map((r) => `${formatDate(r.timestamp)},${r.barcode},${r.device_id}`)
       .join("\n");
 
     const blob = new Blob([header + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `attendance_${safeDate}_${safeDevice}.csv`;
+    a.download = "attendance_export.csv";
     a.click();
-    URL.revokeObjectURL(url);
   };
 
-  /* --- Render UI --- */
   return (
     <div className="main-container">
       <div className="dashboard-container">
-        {/* Header */}
-        <div className="dashboard-header">
-          <h2>📊 Attendance Dashboard</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ color: "#aaa" }}>{records.length} records</div>
+
+        {/* ✅ CLEAN CENTER HEADER */}
+        <div className="dashboard-header flex flex-col items-center text-center space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight text-cyan-400">
+            Attendance Dashboard
+          </h2>
+
+          <div className="flex items-center gap-3 text-gray-400 text-sm">
+            <div>{records.length} Records</div>
             <div
-              style={{
-                padding: "4px 10px",
-                borderRadius: 8,
-                fontSize: 13,
-                background: newScan ? "#003f3f" : "#1b1b1b",
-                color: newScan ? "#00ffdd" : "#aaa",
-                transition: "all 0.2s ease",
-              }}
+              className={`px-3 py-1 rounded-md ${
+                newScan ? "bg-cyan-700 text-cyan-100" : "bg-gray-800 text-gray-500"
+              }`}
             >
               {newScan ? "New Scan!" : "Live"}
             </div>
           </div>
         </div>
 
-        {/* Filter Bar */}
+        {/* ✅ FILTER BAR */}
         <div className="filter-bar">
+          <input
+            type="text"
+            placeholder="Search…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
+          />
+
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
+
           <select
             value={deviceFilter}
             onChange={(e) => setDeviceFilter(e.target.value)}
           >
             <option value="">All Devices</option>
             {devices.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
+              <option key={d}>{d}</option>
             ))}
           </select>
 
-          <button className="btn-primary" onClick={applyFilter}>
-            Apply
-          </button>
           <button className="btn-danger" onClick={clearFilter}>
             Clear
           </button>
+
           <button className="btn-secondary" onClick={downloadCSV}>
             Export CSV
           </button>
-
-          <div style={{ marginLeft: "auto", color: "#9aa", fontSize: 14 }}>
-            Total Today: {stats.total_today || 0}
-          </div>
         </div>
 
-        {/* Table */}
+        {/* ✅ TABLE */}
         <div className="table-container">
           <table>
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Barcode</th>
-                <th>Device</th>
+                <th className="text-base">Time</th>
+                <th className="text-base">Barcode</th>
+                <th className="text-base">Device</th>
               </tr>
             </thead>
+
             <tbody>
               {records.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={3}
-                    style={{
-                      textAlign: "center",
-                      padding: 14,
-                      color: "#888",
-                    }}
-                  >
+                  <td colSpan={3} className="text-center text-gray-500 py-6">
                     No records found
                   </td>
                 </tr>
               ) : (
-                records.map((r, i) => (
-                  <tr key={r.id || `${r.timestamp}-${i}`}>
-                    <td>{formatDate(r.timestamp)}</td>
-                    <td style={{ fontFamily: "monospace" }}>{r.barcode}</td>
-                    <td>{r.device_id}</td>
-                  </tr>
-                ))
+                records
+                  .filter(
+                    (r) =>
+                      !searchQuery ||
+                      r.barcode?.toLowerCase().includes(searchQuery) ||
+                      r.device_id?.toLowerCase().includes(searchQuery)
+                  )
+                  .map((r, i) => (
+                    <tr
+                      key={r.id || `${i}-${r.timestamp}`}
+                      className={
+                        highlighted === r.timestamp ? "bg-cyan-900/30" : ""
+                      }
+                    >
+                      <td>{formatDate(r.timestamp)}</td>
+                      <td className="font-mono">{r.barcode}</td>
+                      <td>{r.device_id}</td>
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>

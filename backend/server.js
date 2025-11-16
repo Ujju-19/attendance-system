@@ -1,4 +1,4 @@
-// backend/server.js — full version with auth (fixed imports)
+// backend/server.js
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -6,21 +6,17 @@ import http from "http";
 import { Server } from "socket.io";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
 import {
   init,
   insertRecord,
-  getRecent,
   createUser,
   getUserByUsername,
   getUsers,
   getDevices,
   getStats,
   openDb,
-  updatePassword,
   deleteUser,
 } from "./db.js";
-
 
 dotenv.config();
 await init();
@@ -28,47 +24,63 @@ await init();
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: process.env.CORS_ORIGIN || "*" },
+  cors: { origin: "*" },
 });
 
-// --- Middleware
-app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
+// ---------------------- Middleware ----------------------
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        origin.startsWith("http://localhost") ||
+        origin.startsWith("http://192.") ||
+        origin.startsWith("http://10.") ||
+        origin.startsWith("https://frontend-") // for your deployed Vercel frontend
+      ) {
+        callback(null, true);
+      } else {
+        console.error("🚫 CORS blocked:", origin);
+        callback(new Error("CORS not allowed for this origin: " + origin));
+      }
+    },
+  })
+);
 app.use(express.json());
 
-// --- JWT helpers
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
+// ---------------------- JWT ----------------------
+const JWT_SECRET = process.env.JWT_SECRET || "qwertujjwal19@2006";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "8h";
 
-function signToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-}
+const signToken = (payload) =>
+  jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
-function verifyTokenMiddleware(req, res, next) {
+const verifyTokenMiddleware = (req, res, next) => {
   try {
-    const auth = req.headers["authorization"] || "";
-    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+    const token = (req.headers.authorization || "").replace("Bearer ", "");
     if (!token) return res.status(401).json({ error: "Missing token" });
-    const data = jwt.verify(token, JWT_SECRET);
-    req.user = data;
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired token" });
+  } catch {
+    res.status(401).json({ error: "Invalid or expired token" });
   }
-}
+};
 
-function requireAdmin(req, res, next) {
-  if (!req.user || req.user.role !== "admin")
+const requireAdmin = (req, res, next) => {
+  if (req.user?.role !== "admin")
     return res.status(403).json({ error: "Admins only" });
   next();
-}
+};
 
-// --- AUTH routes ---
+// ---------------------- Root ----------------------
+app.get("/", (req, res) => {
+  res.send("✅ Backend API running successfully!");
+});
+
+// ---------------------- Auth ----------------------
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password)
-      return res.status(400).json({ error: "username & password required" });
-
     const user = await getUserByUsername(username);
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
@@ -92,74 +104,32 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-app.post(
-  "/api/auth/register",
-  verifyTokenMiddleware,
-  requireAdmin,
-  async (req, res) => {
-    try {
-      const { username, password, role } = req.body;
-      if (!username || !password)
-        return res
-          .status(400)
-          .json({ error: "username & password required" });
-
-      const existing = await getUserByUsername(username);
-      if (existing) return res.status(409).json({ error: "User exists" });
-
-      const hash = await bcrypt.hash(password, 10);
-      const newUser = await createUser(username, hash, role || "user");
-      res.json({ success: true, user: newUser });
-    } catch (err) {
-      console.error("Register error:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  }
-);
-
-// List users (admin only)
-app.get("/api/users", verifyTokenMiddleware, requireAdmin, async (req, res) => {
-  const rows = await getUsers();
-  res.json(rows);
-});
-/* -------------------------
-   Change Password
-   ------------------------- */
-app.post("/api/change-password", verifyTokenMiddleware, async (req, res) => {
+app.post("/api/auth/register", verifyTokenMiddleware, requireAdmin, async (req, res) => {
   try {
-    const { oldPassword, newPassword } = req.body;
-    const username = req.user.username; // from JWT
+    const { username, password, role } = req.body;
+    if (!username || !password)
+      return res.status(400).json({ error: "Missing username or password" });
 
-    if (!oldPassword || !newPassword)
-      return res.status(400).json({ error: "Missing fields" });
+    const existing = await getUserByUsername(username);
+    if (existing) return res.status(409).json({ error: "User exists" });
 
-    const user = await getUserByUsername(username);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    const valid = await bcrypt.compare(oldPassword, user.password_hash);
-    if (!valid) return res.status(401).json({ error: "Old password incorrect" });
-
-    const new_hash = await bcrypt.hash(newPassword, 10);
-    const success = await updatePassword(username, new_hash);
-
-    res.json({ success });
+    const hash = await bcrypt.hash(password, 10);
+    const newUser = await createUser(username, hash, role || "user");
+    res.json({ success: true, user: newUser });
   } catch (err) {
-    console.error("Change password error:", err);
+    console.error("Register error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-/* -------------------------
-   Delete User (Admin only)
-   ------------------------- */
+app.get("/api/users", verifyTokenMiddleware, requireAdmin, async (_, res) => {
+  res.json(await getUsers());
+});
+
 app.delete("/api/users/:username", verifyTokenMiddleware, requireAdmin, async (req, res) => {
   try {
-    const { username } = req.params;
-    if (!username) return res.status(400).json({ error: "Username required" });
-
-    const success = await deleteUser(username);
+    const success = await deleteUser(req.params.username);
     if (!success) return res.status(404).json({ error: "User not found" });
-
     res.json({ success });
   } catch (err) {
     console.error("Delete user error:", err);
@@ -167,7 +137,7 @@ app.delete("/api/users/:username", verifyTokenMiddleware, requireAdmin, async (r
   }
 });
 
-// --- Attendance API ---
+// ---------------------- Attendance ----------------------
 app.get("/api/attendance", async (req, res) => {
   try {
     const { date, device } = req.query;
@@ -197,12 +167,46 @@ app.get("/api/attendance", async (req, res) => {
   }
 });
 
+app.get("/api/attendance-range", async (req, res) => {
+  try {
+    const { start, end, device } = req.query;
+    const db = await openDb();
+    let query = "SELECT * FROM attendance WHERE 1=1";
+    const params = [];
+
+    if (start) {
+      query += " AND date(timestamp) >= date(?)";
+      params.push(start);
+    }
+    if (end) {
+      query += " AND date(timestamp) <= date(?)";
+      params.push(end);
+    }
+    if (device && device !== "all") {
+      query += " AND device_id = ?";
+      params.push(device);
+    }
+
+    query += " ORDER BY timestamp DESC";
+    const rows = await db.all(query, params);
+    res.json(rows);
+  } catch (err) {
+    console.error("Attendance-range error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ✅ Insert from ESP32 or other devices
 app.post("/api/attendance", async (req, res) => {
   try {
+    console.log("Incoming scan:", req.body);
     const { barcode, device_id, secret } = req.body;
+
     if (secret !== process.env.DEVICE_SECRET)
       return res.status(401).json({ error: "Invalid device secret" });
-    if (!barcode) return res.status(400).json({ error: "Missing barcode" });
+
+    if (!barcode)
+      return res.status(400).json({ error: "Missing barcode" });
 
     const record = await insertRecord(barcode, device_id || "unknown");
     io.emit("new-scan", record);
@@ -213,52 +217,43 @@ app.post("/api/attendance", async (req, res) => {
   }
 });
 
-// --- Devices & Stats ---
-app.get("/api/devices", async (req, res) => {
+// ---------------------- Device & Stats ----------------------
+app.get("/api/devices", async (_, res) => {
   const rows = await getDevices();
   res.json(rows.map((r) => r.device_id));
 });
 
-app.get("/api/stats", async (req, res) => {
-  const stats = await getStats();
-  res.json(stats);
+app.get("/api/stats", async (_, res) => {
+  res.json(await getStats());
 });
 
-// --- Socket.IO setup ---
+app.get("/api/device-activity", async (_, res) => {
+  try {
+    const db = await openDb();
+    const rows = await db.all(`
+      SELECT device_id, COUNT(*) AS scans_today
+      FROM attendance
+      WHERE date(timestamp) = date('now','localtime')
+      GROUP BY device_id
+      ORDER BY scans_today DESC
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("Device activity error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ---------------------- Socket.IO ----------------------
 io.on("connection", (socket) => {
   console.log("socket connected:", socket.id);
   socket.on("disconnect", () => console.log("socket disconnected:", socket.id));
 });
 
-// --- Start server ---
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-});
-// --- Change own password (for any logged-in user)
-app.post("/api/auth/change-password", verifyTokenMiddleware, async (req, res) => {
-  try {
-    const { oldPassword, newPassword } = req.body;
-    if (!oldPassword || !newPassword)
-      return res.status(400).json({ error: "Old and new password required" });
+// ---------------------- Start Server ----------------------
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+}
 
-    const user = await getUserByUsername(req.user.username);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    const match = await bcrypt.compare(oldPassword, user.password_hash);
-    if (!match) return res.status(401).json({ error: "Old password incorrect" });
-
-    const newHash = await bcrypt.hash(newPassword, 10);
-    const db = await openDb();
-    await db.run("UPDATE users SET password_hash = ? WHERE username = ?", [
-      newHash,
-      req.user.username,
-    ]);
-
-    res.json({ success: true, message: "Password changed successfully" });
-  } catch (err) {
-    console.error("Change password error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
+export default app;
